@@ -53,6 +53,20 @@ main() {
 			continue
 		fi
 
+		# Only send keys to idle shell panes — skip panes that already have
+		# a process running (happens when resurrect preserves existing panes
+		# instead of recreating them from scratch)
+		local pane_cmd
+		pane_cmd="$(tmux display-message -p -t "${session_name}:${window_index}.${pane_index}" '#{pane_current_command}' 2>/dev/null)"
+		case "$pane_cmd" in
+			bash|zsh|sh|fish|dash|ksh) ;;
+			*)
+				_log_debug "Pane ${session_name}:${window_index}.${pane_index} is running '$pane_cmd', skipping"
+				skipped=$((skipped + 1))
+				continue
+				;;
+		esac
+
 		# Check if the session conversation still exists on disk
 		if ! _session_exists_on_disk "$session_id"; then
 			_log_debug "Session $session_id not found on disk (expired?), skipping"
