@@ -23,6 +23,16 @@ Reload tmux config or press `prefix + I` to install.
 
 ## How it works
 
+### Restart (prefix + R)
+
+Restart all running Claude Code sessions in place — useful after changing config, skills, or plugins:
+
+1. Scans all tmux panes for running Claude Code processes
+2. Captures each session's state (session ID, working directory, CLI flags)
+3. Gracefully exits each session (`Escape` + `/exit`, with `Ctrl+C` fallback)
+4. Waits for panes to return to shell
+5. Resumes each session with `claude --resume` using the original flags and working directory
+
 ### Save (prefix + Ctrl-s)
 
 When tmux-resurrect saves your session, this plugin hooks into the save lifecycle to:
@@ -54,6 +64,12 @@ set -g @resurrect-claude-restore-delay '0.5'
 
 # Skip sessions older than this many days (default: 30)
 set -g @resurrect-claude-max-age-days '30'
+
+# Key to bind for restarting all Claude sessions (default: R)
+set -g @resurrect-claude-restart-key 'R'
+
+# Seconds to wait for Claude to exit before falling back to Ctrl+C (default: 10)
+set -g @resurrect-claude-restart-timeout '10'
 
 # Enable debug logging to <resurrect-dir>/claude_debug.log (default: off)
 set -g @resurrect-claude-debug 'off'
