@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-04-27
 
 ### Added
 
@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@resurrect-claude-restart-key` option to configure the restart keybinding (default: `R`).
 - `@resurrect-claude-restart-timeout` option to configure exit timeout in seconds (default: `10`).
 
-## [0.1.0] - 2025-04-26
+## [0.1.0] - 2026-04-26
 
 ### Added
 
@@ -36,5 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Skip panes that already have a running process during restore, avoiding
   duplicate sessions when resurrect preserves existing panes.
 
-[Unreleased]: https://github.com/att14/tmux-resurrect-claude/compare/v0.1.0...HEAD
+[0.2.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/att14/tmux-resurrect-claude/commits/v0.1.0
