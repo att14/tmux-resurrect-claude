@@ -25,7 +25,7 @@ Reload tmux config or press `prefix + I` to install.
 
 ### Restart (prefix + R)
 
-Restart all running Claude Code sessions in place — useful after changing config, skills, or plugins:
+Restart all running Claude Code sessions in place — useful after changing MCP server config or when sessions need a fresh start:
 
 1. Scans all tmux panes for running Claude Code processes
 2. Captures each session's state (session ID, working directory, CLI flags)
