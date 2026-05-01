@@ -16,10 +16,11 @@ main() {
 		return 0
 	fi
 
-	local resurrect_dir state_file pane_list count
+	local resurrect_dir state_file pane_list processed_panes count
 	resurrect_dir="$(_get_resurrect_dir)"
 	state_file="$resurrect_dir/claude_sessions.tsv"
 	pane_list="$(mktemp)"
+	processed_panes="$(mktemp)"
 	count=0
 
 	# Ensure the resurrect directory exists
@@ -82,10 +83,17 @@ main() {
 			pane_index="$(echo "$pane_info" | cut -f4)"
 			pane_cwd="$(echo "$pane_info" | cut -f5)"
 
-			# Extract CLI args from the running process
-			local process_args cli_args
-			process_args="$(_get_process_args "$session_pid")"
-			cli_args="$(_extract_cli_args "$process_args")"
+			# Skip if we already recorded this pane (dedup multiple session files)
+			local pane_key="${pane_session_name}:${pane_window}.${pane_index}"
+			if grep -qF "$pane_key" "$processed_panes" 2>/dev/null; then
+				_log_debug "Skipping duplicate pane $pane_key for session $session_id"
+				continue
+			fi
+			echo "$pane_key" >> "$processed_panes"
+
+			# Resolve CLI args (sidecar → ps fallback)
+			local cli_args
+			cli_args="$(_resolve_cli_args "$session_id" "$session_pid")"
 
 			# Use the session file's cwd (more accurate than pane cwd if claude cd'd)
 			local session_cwd
@@ -106,7 +114,7 @@ main() {
 		done
 	fi
 
-	rm -f "$pane_list"
+	rm -f "$pane_list" "$processed_panes"
 
 	if [ "$count" -gt 0 ]; then
 		_log "Saved $count Claude session(s)"

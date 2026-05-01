@@ -34,11 +34,22 @@ main() {
 		return 0
 	fi
 
-	local count skipped max_age_seconds now
+	local count skipped max_age_seconds now deduped_file
 	count=0
 	skipped=0
 	max_age_seconds=$((max_age_days * 86400))
 	now="$(date +%s)"
+
+	# Dedup entries per pane, keeping the one with the longest cli_args
+	deduped_file="$(mktemp)"
+	awk -F'\t' '{
+		key = $1 ":" $2 "." $3
+		if (!(key in seen) || length($6) > length(best[key])) {
+			seen[key] = $0
+			best[key] = $6
+		}
+	}
+	END { for (key in seen) print seen[key] }' "$state_file" > "$deduped_file"
 
 	while IFS=$'\t' read -r session_name window_index pane_index session_id cwd cli_args; do
 		# Skip empty lines
@@ -74,12 +85,15 @@ main() {
 			continue
 		fi
 
-		# Build the resume command
+		# Persist CLI args to sidecar for future saves
+		_write_sidecar_args "$session_id" "$cli_args"
+
+		# Build the resume command (command bypasses aliases to avoid flag doubling)
 		local cmd
 		if [ -n "$cli_args" ]; then
-			cmd="claude $cli_args --resume $session_id"
+			cmd="command claude $cli_args --resume $session_id"
 		else
-			cmd="claude --resume $session_id"
+			cmd="command claude --resume $session_id"
 		fi
 
 		# Change to the saved working directory first, then launch claude
@@ -99,7 +113,9 @@ main() {
 		if [ "$restore_delay" != "0" ]; then
 			sleep "$restore_delay"
 		fi
-	done < "$state_file"
+	done < "$deduped_file"
+
+	rm -f "$deduped_file"
 
 	if [ "$count" -gt 0 ] || [ "$skipped" -gt 0 ]; then
 		_log "Restored $count Claude session(s)$([ "$skipped" -gt 0 ] && echo ", skipped $skipped")"
