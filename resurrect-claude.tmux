@@ -26,3 +26,8 @@ _chain_hook() {
 
 _chain_hook "post-save-all" "$CURRENT_DIR/scripts/save_claude_sessions.sh"
 _chain_hook "post-restore-all" "$CURRENT_DIR/scripts/restore_claude_sessions.sh"
+
+# Register restart keybinding (default: prefix + R)
+restart_key="$(tmux show-option -gqv "@resurrect-claude-restart-key" 2>/dev/null)"
+: "${restart_key:=R}"
+tmux bind-key "$restart_key" run-shell "$CURRENT_DIR/scripts/restart_claude_sessions.sh"
