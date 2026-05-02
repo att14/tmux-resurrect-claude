@@ -31,3 +31,9 @@ _chain_hook "post-restore-all" "$CURRENT_DIR/scripts/restore_claude_sessions.sh"
 restart_key="$(tmux show-option -gqv "@resurrect-claude-restart-key" 2>/dev/null)"
 : "${restart_key:=R}"
 tmux bind-key "$restart_key" run-shell "$CURRENT_DIR/scripts/restart_claude_sessions.sh"
+
+# Register source-rc restart keybinding (default: prefix + Z)
+# Same as restart but sources ~/.zshrc first to pick up env changes
+source_rc_restart_key="$(tmux show-option -gqv "@resurrect-claude-source-rc-restart-key" 2>/dev/null)"
+: "${source_rc_restart_key:=Z}"
+tmux bind-key "$source_rc_restart_key" run-shell "$CURRENT_DIR/scripts/restart_claude_sessions.sh --source-rc"

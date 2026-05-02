@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-01
+
+### Added
+
+- Restart with shell reload keybinding (`prefix + Z`). Same as restart but
+  sources the shell's rc file before resuming each session, picking up env changes.
+  Detects zsh, bash, fish, and falls back to `~/.profile`.
+- `@resurrect-claude-source-rc-restart-key` option to configure the keybinding (default: `Z`).
+
 ## [0.2.0] - 2026-04-27
 
 ### Added
@@ -36,5 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Skip panes that already have a running process during restore, avoiding
   duplicate sessions when resurrect preserves existing panes.
 
+[0.3.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/att14/tmux-resurrect-claude/commits/v0.1.0
