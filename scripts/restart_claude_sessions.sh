@@ -11,6 +11,11 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$CURRENT_DIR/helpers.sh"
 
 main() {
+	local source_rc=0
+	if [ "${1:-}" = "--source-rc" ]; then
+		source_rc=1
+	fi
+
 	# Check master switch
 	if [ "$(_get_option "@resurrect-claude-enabled" "on")" != "on" ]; then
 		return 0
@@ -190,11 +195,21 @@ main() {
 			cmd="command claude --resume $session_id"
 		fi
 
-		local full_cmd
+		local full_cmd=""
+		if [ "$source_rc" -eq 1 ]; then
+			local pane_shell
+			pane_shell="$(tmux display-message -p -t "$target" '#{pane_current_command}')"
+			case "$pane_shell" in
+				fish) full_cmd="source ~/.config/fish/config.fish; and " ;;
+				bash) full_cmd="source ~/.bashrc && " ;;
+				zsh)  full_cmd="source ~/.zshrc && " ;;
+				*)    full_cmd="source ~/.profile && " ;;
+			esac
+		fi
 		if [ -n "$cwd" ] && [ "$cwd" != "." ]; then
-			full_cmd="cd $(printf '%q' "$cwd") && $cmd"
+			full_cmd+="cd $(printf '%q' "$cwd") && $cmd"
 		else
-			full_cmd="$cmd"
+			full_cmd+="$cmd"
 		fi
 
 		_log_debug "Restart: resuming $target with: $full_cmd"
@@ -213,4 +228,4 @@ main() {
 	_log_debug "Restart complete: $restarted restarted, $failed failed"
 }
 
-main
+main "$@"

@@ -33,6 +33,15 @@ Restart all running Claude Code sessions in place — useful after changing MCP 
 4. Waits for panes to return to shell
 5. Resumes each session with `claude --resume` using the original flags and working directory
 
+### Restart with shell reload (prefix + Z)
+
+Same as restart, but sources the shell's rc file in each pane before resuming Claude. Useful when you've changed environment variables, PATH, or shell config that running sessions need to pick up. Detects the shell running in each pane and sources the appropriate file:
+
+- **zsh** → `~/.zshrc`
+- **bash** → `~/.bashrc`
+- **fish** → `~/.config/fish/config.fish`
+- **other** → `~/.profile`
+
 ### Save (prefix + Ctrl-s)
 
 When tmux-resurrect saves your session, this plugin hooks into the save lifecycle to:
@@ -67,6 +76,9 @@ set -g @resurrect-claude-max-age-days '30'
 
 # Key to bind for restarting all Claude sessions (default: R)
 set -g @resurrect-claude-restart-key 'R'
+
+# Key to bind for restart with shell reload (default: Z)
+set -g @resurrect-claude-source-rc-restart-key 'Z'
 
 # Seconds to wait for Claude to exit before falling back to Ctrl+C (default: 10)
 set -g @resurrect-claude-restart-timeout '10'
