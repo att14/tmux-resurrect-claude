@@ -18,6 +18,10 @@ _chain_hook() {
 	existing="$(tmux show-option -gqv "$option" 2>/dev/null)"
 
 	if [ -n "$existing" ]; then
+		# Skip if our script is already in the hook (avoids duplication on re-source)
+		case "$existing" in
+			*"$script"*) return 0 ;;
+		esac
 		tmux set-option -g "$option" "${existing} ; ${script}"
 	else
 		tmux set-option -g "$option" "${script}"
