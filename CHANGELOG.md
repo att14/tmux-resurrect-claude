@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-11
+
+### Fixed
+
+- Sanitize resurrect save files to prevent bloat from child process trees.
+  The upstream `ps.sh` strategy can dump 200KB+ lines from processes like
+  `fsevent_watch`, inflating saves from ~5KB to 1.5MB. These non-record
+  lines are never used by restore and are now stripped in the post-save hook.
+- Prevent duplicate hook chaining when tmux config is re-sourced.
+
 ## [0.3.0] - 2026-05-01
 
 ### Added
@@ -45,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Skip panes that already have a running process during restore, avoiding
   duplicate sessions when resurrect preserves existing panes.
 
+[0.3.1]: https://github.com/att14/tmux-resurrect-claude/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/att14/tmux-resurrect-claude/commits/v0.1.0
