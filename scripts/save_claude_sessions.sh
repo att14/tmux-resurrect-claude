@@ -10,11 +10,44 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=helpers.sh
 source "$CURRENT_DIR/helpers.sh"
 
+_sanitize_save_file() {
+	local resurrect_dir="$1"
+	local last_link="$resurrect_dir/last"
+
+	[ -L "$last_link" ] || return 0
+
+	local save_file
+	save_file="$(readlink "$last_link")"
+	# Handle both relative and absolute symlink targets
+	case "$save_file" in
+		/*) ;;
+		*) save_file="$resurrect_dir/$save_file" ;;
+	esac
+	[ -f "$save_file" ] || return 0
+
+	local tmp
+	tmp="$(mktemp)"
+	grep -E '^(pane|window|state)' "$save_file" > "$tmp"
+	if [ -s "$tmp" ]; then
+		mv "$tmp" "$save_file"
+		_log_debug "Sanitized save file: removed non-record lines"
+	else
+		rm -f "$tmp"
+		_log_debug "Sanitize skipped: no record lines found"
+	fi
+}
+
 main() {
 	# Check master switch
 	if [ "$(_get_option "@resurrect-claude-enabled" "on")" != "on" ]; then
 		return 0
 	fi
+
+	# Strip non-record lines (child process trees) from the resurrect save file.
+	# The upstream ps.sh strategy dumps all child processes of each pane shell,
+	# which can produce 200KB+ lines from fsevent_watch or similar. These lines
+	# are never used by restore — it only reads $11 from pane records.
+	_sanitize_save_file "$(_get_resurrect_dir)"
 
 	local resurrect_dir state_file pane_list processed_panes count
 	resurrect_dir="$(_get_resurrect_dir)"
