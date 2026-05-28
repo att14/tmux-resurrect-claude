@@ -160,6 +160,120 @@ _extract_cli_args() {
 	echo "$args"
 }
 
+# Resolve the effective model from Claude Code's settings hierarchy.
+# Order: project local → project → user local → user global.
+_resolve_model() {
+	local cwd="$1"
+	local model="" project_root=""
+
+	project_root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)"
+
+	if [ -n "$project_root" ]; then
+		for f in "$project_root/.claude/settings.local.json" "$project_root/.claude/settings.json"; do
+			[ -f "$f" ] || continue
+			model="$(cat "$f" | _json_str "model")"
+			[ -n "$model" ] && { echo "$model"; return; }
+		done
+	fi
+
+	for f in "$HOME/.claude/settings.local.json" "$HOME/.claude/settings.json"; do
+		[ -f "$f" ] || continue
+		model="$(cat "$f" | _json_str "model")"
+		[ -n "$model" ] && { echo "$model"; return; }
+	done
+}
+
+# Ensure --model is present in cli_args. If missing, resolve from settings.
+_ensure_model_arg() {
+	local cli_args="$1" cwd="$2"
+
+	# Already has --model, leave it alone
+	case " $cli_args " in
+		*" --model "*) echo "$cli_args"; return ;;
+	esac
+	case "$cli_args" in
+		--model=*|*" --model="*) echo "$cli_args"; return ;;
+	esac
+
+	local model
+	model="$(_resolve_model "$cwd")"
+	if [ -n "$model" ]; then
+		if [ -n "$cli_args" ]; then
+			echo "--model $model $cli_args"
+		else
+			echo "--model $model"
+		fi
+	else
+		echo "$cli_args"
+	fi
+}
+
+# Shell-quote the --model value in cli_args to prevent glob expansion.
+# Model IDs like claude-opus-4-6[1m] contain brackets that zsh treats as globs.
+# Applied at restore time only (not persisted to TSV/sidecar).
+_shell_quote_model() {
+	local args="$1"
+	# Quote the model value (space-separated and = forms)
+	args="$(echo "$args" | sed "s/--model \([^ ]*\)/--model '\1'/")"
+	args="$(echo "$args" | sed "s/--model=\([^ ]*\)/--model='\1'/")"
+	echo "$args"
+}
+
+# Check if cli_args contains a bare --worktree flag (no path argument).
+# Returns 0 if bare --worktree found, 1 otherwise.
+_has_bare_worktree_flag() {
+	local args="$1"
+	local found_worktree=0
+	for token in $args; do
+		if [ "$found_worktree" -eq 1 ]; then
+			case "$token" in
+				--*) return 0 ;;
+				*) return 1 ;;
+			esac
+		fi
+		[ "$token" = "--worktree" ] && found_worktree=1
+	done
+	[ "$found_worktree" -eq 1 ]
+}
+
+# Fix bare --worktree for session resume.
+# Bare --worktree creates a NEW worktree, but on resume we need the existing one.
+# Resolves to --worktree <path> and sets cwd to the main repository.
+# Sets _FW_CWD and _FW_CLI_ARGS with the resolved values.
+_fixup_worktree_resume() {
+	local cwd="$1" cli_args="$2"
+	_FW_CWD="$cwd"
+	_FW_CLI_ARGS="$cli_args"
+
+	_has_bare_worktree_flag "$cli_args" || return 0
+
+	local wt_toplevel git_common_dir main_repo
+	wt_toplevel="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || {
+		# Not a git repo — strip --worktree to avoid create-worktree attempt
+		_FW_CLI_ARGS="$(echo "$cli_args" | sed 's/--worktree//; s/  */ /g; s/^ *//; s/ *$//')"
+		return 0
+	}
+
+	git_common_dir="$(git -C "$cwd" rev-parse --git-common-dir 2>/dev/null)"
+	case "$git_common_dir" in
+		/*) ;;
+		*) git_common_dir="$(cd "$cwd" && cd "$git_common_dir" && pwd 2>/dev/null)" ;;
+	esac
+
+	main_repo="$(dirname "$git_common_dir")"
+
+	if [ "$wt_toplevel" = "$main_repo" ]; then
+		# In the main repo, not a worktree — strip bare --worktree
+		_FW_CLI_ARGS="$(echo "$cli_args" | sed 's/--worktree//; s/  */ /g; s/^ *//; s/ *$//')"
+		return 0
+	fi
+
+	# In a worktree: resolve to --worktree <path> and cd to main repo
+	_FW_CWD="$main_repo"
+	_FW_CLI_ARGS="$(echo "$cli_args" | sed "s|--worktree|--worktree $wt_toplevel|")"
+	_log_debug "Worktree fixup: cwd=$_FW_CWD worktree=$wt_toplevel"
+}
+
 # Log a message to tmux's display (visible briefly in the status line).
 _log() {
 	local msg="$1"

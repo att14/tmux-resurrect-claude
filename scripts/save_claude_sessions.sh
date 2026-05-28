@@ -133,6 +133,9 @@ main() {
 			session_cwd="$(echo "$json" | _json_str "cwd")"
 			: "${session_cwd:=$pane_cwd}"
 
+			# Ensure model is preserved for resume
+			cli_args="$(_ensure_model_arg "$cli_args" "$session_cwd")"
+
 			# Write to state file
 			printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
 				"$pane_session_name" \

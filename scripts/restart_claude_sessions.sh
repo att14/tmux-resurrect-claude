@@ -106,6 +106,9 @@ main() {
 		session_cwd="$(echo "$json" | _json_str "cwd")"
 		: "${session_cwd:=$pane_cwd}"
 
+		# Ensure model is preserved for resume
+		cli_args="$(_ensure_model_arg "$cli_args" "$session_cwd")"
+
 		printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
 			"$pane_session_name" \
 			"$pane_window" \
@@ -184,13 +187,19 @@ main() {
 		[ -n "$session_name" ] || continue
 		local target="${session_name}:${window_index}.${pane_index}"
 
+		# Fix bare --worktree: resolve to --worktree <path> and cd to main repo
+		_fixup_worktree_resume "$cwd" "$cli_args"
+		cwd="$_FW_CWD"
+		cli_args="$_FW_CLI_ARGS"
+
 		# Persist CLI args to sidecar for future saves
 		_write_sidecar_args "$session_id" "$cli_args"
 
 		# Build resume command (command bypasses aliases to avoid flag doubling)
-		local cmd
-		if [ -n "$cli_args" ]; then
-			cmd="command claude $cli_args --resume $session_id"
+		local cmd safe_args
+		safe_args="$(_shell_quote_model "$cli_args")"
+		if [ -n "$safe_args" ]; then
+			cmd="command claude $safe_args --resume $session_id"
 		else
 			cmd="command claude --resume $session_id"
 		fi

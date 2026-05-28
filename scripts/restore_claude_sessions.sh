@@ -85,13 +85,19 @@ main() {
 			continue
 		fi
 
+		# Fix bare --worktree: resolve to --worktree <path> and cd to main repo
+		_fixup_worktree_resume "$cwd" "$cli_args"
+		cwd="$_FW_CWD"
+		cli_args="$_FW_CLI_ARGS"
+
 		# Persist CLI args to sidecar for future saves
 		_write_sidecar_args "$session_id" "$cli_args"
 
 		# Build the resume command (command bypasses aliases to avoid flag doubling)
-		local cmd
-		if [ -n "$cli_args" ]; then
-			cmd="command claude $cli_args --resume $session_id"
+		local cmd safe_args
+		safe_args="$(_shell_quote_model "$cli_args")"
+		if [ -n "$safe_args" ]; then
+			cmd="command claude $safe_args --resume $session_id"
 		else
 			cmd="command claude --resume $session_id"
 		fi
