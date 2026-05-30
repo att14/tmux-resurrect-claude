@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-05-30
+
+### Fixed
+
+- Pass worktree name instead of full path on resume. `claude --worktree` expects
+  a short name (e.g., `warm-floating-feather`), not an absolute path. Uses
+  `basename` to extract the directory name from the resolved worktree path.
+
 ## [0.4.0] - 2026-05-28
 
 ### Fixed
@@ -69,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Skip panes that already have a running process during restore, avoiding
   duplicate sessions when resurrect preserves existing panes.
 
+[0.4.1]: https://github.com/att14/tmux-resurrect-claude/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/att14/tmux-resurrect-claude/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/att14/tmux-resurrect-claude/compare/v0.2.0...v0.3.0

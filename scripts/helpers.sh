@@ -268,10 +268,12 @@ _fixup_worktree_resume() {
 		return 0
 	fi
 
-	# In a worktree: resolve to --worktree <path> and cd to main repo
+	# In a worktree: resolve to --worktree <name> and cd to main repo
+	local wt_name
+	wt_name="$(basename "$wt_toplevel")"
 	_FW_CWD="$main_repo"
-	_FW_CLI_ARGS="$(echo "$cli_args" | sed "s|--worktree|--worktree $wt_toplevel|")"
-	_log_debug "Worktree fixup: cwd=$_FW_CWD worktree=$wt_toplevel"
+	_FW_CLI_ARGS="$(echo "$cli_args" | sed "s|--worktree|--worktree $wt_name|")"
+	_log_debug "Worktree fixup: cwd=$_FW_CWD worktree=$wt_name"
 }
 
 # Log a message to tmux's display (visible briefly in the status line).
